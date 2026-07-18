@@ -80,6 +80,50 @@ app.post("/tasks", (req, res) => {
 
 });
 
+app.put("/tasks/:id", (req, res) => {
+
+    const taskId = parseInt(req.params.id);
+
+    const task = tasks.find(t => t.id === taskId);
+
+    if (!task) {
+        return res.status(404).json({
+            error: "Task not found"
+        });
+    }
+
+    const { title, done } = req.body;
+
+    if (title !== undefined) {
+        task.title = title;
+    }
+
+    if (done !== undefined) {
+        task.done = done;
+    }
+
+    res.json(task);
+
+});
+
+app.delete("/tasks/:id", (req, res) => {
+
+    const taskId = parseInt(req.params.id);
+
+    const taskIndex = tasks.findIndex(task => task.id === taskId);
+
+    if (taskIndex === -1) {
+        return res.status(404).json({
+            error: "Task not found"
+        });
+    }
+
+    tasks.splice(taskIndex, 1);
+
+    res.status(204).send();
+
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
