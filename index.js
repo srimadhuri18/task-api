@@ -1,5 +1,6 @@
 const express = require("express");
-
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 const app = express();
 
 app.use(express.json());
@@ -38,9 +39,40 @@ app.get("/health", (req, res) => {
     });
 });
 
+/**
+ * @swagger
+ * /tasks:
+ *   get:
+ *     summary: Get all tasks
+ *     description: Returns a list of all tasks.
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the list of tasks.
+ */
+
 app.get("/tasks", (req, res) => {
     res.json(tasks);
 });
+
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   get:
+ *     summary: Get a task by ID
+ *     description: Returns a single task based on its ID.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the task
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Task found successfully.
+ *       404:
+ *         description: Task not found.
+ */
 
 app.get("/tasks/:id", (req, res) => {
 
@@ -57,6 +89,29 @@ app.get("/tasks/:id", (req, res) => {
     res.json(task);
 
 });
+
+/**
+ * @swagger
+ * /tasks:
+ *   post:
+ *     summary: Create a new task
+ *     description: Creates a new task and adds it to the task list.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: Learn Swagger
+ *     responses:
+ *       201:
+ *         description: Task created successfully.
+ *       400:
+ *         description: Title is required.
+ */
 
 app.post("/tasks", (req, res) => {
 
@@ -79,6 +134,39 @@ app.post("/tasks", (req, res) => {
     res.status(201).json(newTask);
 
 });
+
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   put:
+ *     summary: Update an existing task
+ *     description: Updates the title and/or completion status of a task.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the task to update.
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: Learn Express
+ *               done:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Task updated successfully.
+ *       404:
+ *         description: Task not found.
+ */
 
 app.put("/tasks/:id", (req, res) => {
 
@@ -106,6 +194,26 @@ app.put("/tasks/:id", (req, res) => {
 
 });
 
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   delete:
+ *     summary: Delete a task
+ *     description: Deletes a task by its ID.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the task to delete.
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Task deleted successfully.
+ *       404:
+ *         description: Task not found.
+ */
+
 app.delete("/tasks/:id", (req, res) => {
 
     const taskId = parseInt(req.params.id);
@@ -123,6 +231,12 @@ app.delete("/tasks/:id", (req, res) => {
     res.status(204).send();
 
 });
+
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
+);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
