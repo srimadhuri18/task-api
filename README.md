@@ -1,54 +1,89 @@
 # Task API
 
-A simple RESTful Task Management API built with Express.js.
+A RESTful Task Management API built with Express.js, PostgreSQL, Docker, and Swagger.
 
 ## Features
 
-- Get all tasks
-- Get a task by ID
-- Create a new task
-- Update a task
-- Delete a task
-- Swagger API Documentation
+- Create, Read, Update and Delete tasks (CRUD)
+- PostgreSQL database
+- Dockerized PostgreSQL
+- Docker Compose support
+- Swagger API documentation
+- Environment variables using dotenv
 
-## Technologies Used
+## Tech Stack
 
 - Node.js
 - Express.js
+- PostgreSQL
+- Docker
+- Docker Compose
 - Swagger UI
-- swagger-jsdoc
+- pg
+- dotenv
 
 ## Installation
+
+### Clone the repository
+
+```bash
+git clone <repository-url>
+cd task-api
+```
+
+### Install dependencies
 
 ```bash
 npm install
 ```
 
-## Run the Project
+### Configure environment
+
+Create a `.env` file.
+
+```env
+DATABASE_URL=postgres://postgres:postgres123@localhost:5432/taskdb
+PORT=3000
+```
+
+### Start PostgreSQL
+
+```bash
+docker compose up -d
+```
+
+### Run the server
 
 ```bash
 node index.js
 ```
 
-Server:
+## API Documentation
 
-```
-http://localhost:3000
-```
+Open:
 
-Swagger Documentation:
-
-```
 http://localhost:3000/api-docs
-```
 
-## API Endpoints
+## Available Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /tasks | Get all tasks |
-| GET | /tasks/{id} | Get task by ID |
-| POST | /tasks | Create task |
-| PUT | /tasks/{id} | Update task |
-| DELETE | /tasks/{id} | Delete task |
+- GET /tasks
+- GET /tasks/:id
+- POST /tasks
+- PUT /tasks/:id
+- DELETE /tasks/:id
 
+## Database
+
+Table:
+
+tasks
+
+Columns:
+
+- id
+- title
+- done
+
+## Persistence
+
+Data is stored in a Docker volume and remains available after restarting the container.

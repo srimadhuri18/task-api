@@ -1,3 +1,5 @@
+const taskRepository = require("./repositories/taskRepository");
+const pool = require("./db");
 const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
@@ -6,24 +8,6 @@ const app = express();
 app.use(express.json());
 
 const PORT = 3000;
-
-const tasks = [
-    {
-        id: 1,
-        title: "Learn Express",
-        done: false
-    },
-    {
-        id: 2,
-        title: "Build CRUD API",
-        done: false
-    },
-    {
-        id: 3,
-        title: "Push to GitHub",
-        done: true
-    }
-];
 
 app.get("/", (req, res) => {
     res.json({
@@ -50,8 +34,17 @@ app.get("/health", (req, res) => {
  *         description: Successfully retrieved the list of tasks.
  */
 
-app.get("/tasks", (req, res) => {
-    res.json(tasks);
+app.get("/tasks", async (req, res) => {
+    try {
+        const tasks = await taskRepository.getAllTasks();
+        res.json(tasks);
+    } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+        error: "Internal Server Error"
+    });
+}
 });
 
 /**
@@ -74,19 +67,29 @@ app.get("/tasks", (req, res) => {
  *         description: Task not found.
  */
 
-app.get("/tasks/:id", (req, res) => {
+app.get("/tasks/:id", async (req, res) => {
 
-    const taskId = parseInt(req.params.id);
+    try {
 
-    const task = tasks.find(t => t.id === taskId);
+        const taskId = parseInt(req.params.id);
 
-    if (!task) {
-        return res.status(404).json({
-            error: `Task ${taskId} not found`
+        const task = await taskRepository.getTaskById(taskId);
+
+        if (!task) {
+            return res.status(404).json({
+                error: `Task ${taskId} not found`
+            });
+        }
+
+        res.json(task);
+
+    } catch (error) {
+
+        res.status(500).json({
+            error: "Internal Server Error"
         });
-    }
 
-    res.json(task);
+    }
 
 });
 
@@ -113,25 +116,29 @@ app.get("/tasks/:id", (req, res) => {
  *         description: Title is required.
  */
 
-app.post("/tasks", (req, res) => {
+app.post("/tasks", async (req, res) => {
 
-    const { title } = req.body;
+    try {
 
-    if (!title || title.trim() === "") {
-        return res.status(400).json({
-            error: "Title is required"
+        const { title } = req.body;
+
+        if (!title || title.trim() === "") {
+            return res.status(400).json({
+                error: "Title is required"
+            });
+        }
+
+        const newTask = await taskRepository.createTask(title);
+
+        res.status(201).json(newTask);
+
+    } catch (error) {
+
+        res.status(500).json({
+            error: "Internal Server Error"
         });
+
     }
-
-    const newTask = {
-        id: tasks.length + 1,
-        title: title,
-        done: false
-    };
-
-    tasks.push(newTask);
-
-    res.status(201).json(newTask);
 
 });
 
@@ -168,29 +175,35 @@ app.post("/tasks", (req, res) => {
  *         description: Task not found.
  */
 
-app.put("/tasks/:id", (req, res) => {
+app.put("/tasks/:id", async (req, res) => {
 
-    const taskId = parseInt(req.params.id);
+    try {
 
-    const task = tasks.find(t => t.id === taskId);
+        const taskId = parseInt(req.params.id);
 
-    if (!task) {
-        return res.status(404).json({
-            error: "Task not found"
+        const { title, done } = req.body;
+
+        const updatedTask = await taskRepository.updateTask(
+            taskId,
+            title,
+            done
+        );
+
+        if (!updatedTask) {
+            return res.status(404).json({
+                error: "Task not found"
+            });
+        }
+
+        res.json(updatedTask);
+
+    } catch (error) {
+
+        res.status(500).json({
+            error: "Internal Server Error"
         });
+
     }
-
-    const { title, done } = req.body;
-
-    if (title !== undefined) {
-        task.title = title;
-    }
-
-    if (done !== undefined) {
-        task.done = done;
-    }
-
-    res.json(task);
 
 });
 
@@ -214,21 +227,29 @@ app.put("/tasks/:id", (req, res) => {
  *         description: Task not found.
  */
 
-app.delete("/tasks/:id", (req, res) => {
+app.delete("/tasks/:id", async (req, res) => {
 
-    const taskId = parseInt(req.params.id);
+    try {
 
-    const taskIndex = tasks.findIndex(task => task.id === taskId);
+        const taskId = parseInt(req.params.id);
 
-    if (taskIndex === -1) {
-        return res.status(404).json({
-            error: "Task not found"
+        const deletedTask = await taskRepository.deleteTask(taskId);
+
+        if (!deletedTask) {
+            return res.status(404).json({
+                error: "Task not found"
+            });
+        }
+
+        res.status(204).send();
+
+    } catch (error) {
+
+        res.status(500).json({
+            error: "Internal Server Error"
         });
+
     }
-
-    tasks.splice(taskIndex, 1);
-
-    res.status(204).send();
 
 });
 
@@ -237,6 +258,14 @@ app.use(
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec)
 );
+
+pool.query("SELECT NOW()")
+  .then(() => {
+    console.log("✅ Connected to PostgreSQL");
+  })
+  .catch((err) => {
+    console.error("❌ Database connection failed:", err.message);
+  });
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
